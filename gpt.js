@@ -2,7 +2,7 @@
  * @Author: liziwei01
  * @Date: 2023-03-17 13:39:59
  * @LastEditors: liziwei01
- * @LastEditTime: 2023-03-17 23:03:13
+ * @LastEditTime: 2023-03-20 00:00:05
  * @Description: file content
  */
 import plugin from '../../lib/plugins/plugin.js'
@@ -29,6 +29,12 @@ export class yunzigpt extends plugin {
           reg: '^#聊天.*$',
           /** 执行方法 */
           fnc: 'chat'
+        },
+        {
+          /** 命令正则匹配 */
+          reg: '^#聊天系统.*$',
+          /** 执行方法 */
+          fnc: 'chatsys'
         }
       ]
     })
@@ -45,6 +51,10 @@ export class yunzigpt extends plugin {
       chat = chat.substring(1)
       syscnt = system2
     }
+    let selfsystem = await redis.get(`Yz:genshin:gpt:system:${this.e.user_id}`)
+    if (selfsystem) {
+      syscnt = selfsystem
+    }
     try {
       const completion = await openai.createChatCompletion({
         model: 'gpt-3.5-turbo',
@@ -60,5 +70,10 @@ export class yunzigpt extends plugin {
         logger.info(`Error with OpenAI API request: ${error.message}`)
       }
     }
+  }
+
+  async chatsys () {
+    let system = this.e.msg.substring(5)
+    await redis.setEx(`Yz:genshin:gpt:system:${this.e.user_id}`, 3600 * 24 * 30, system)
   }
 }
